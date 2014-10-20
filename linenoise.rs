@@ -1,65 +1,73 @@
 // Crate linkage metadata
-#[link(name = "linenoise", vers = "0.1", author = "davbo")];
+#![link(name = "linenoise", vers = "0.1", author = "davbo, donbrowne")]
 
 // Make a library ("bin" is the default)
-#[crate_type = "lib"];
+#![crate_type = "lib"]
 
+extern crate libc;
+use std::c_str::CString;
+
+/*
 struct linenoiseCompletions {
     len: libc::size_t,
-    cvec: **libc::c_char,
+    cvec: *mut *mut libc::c_char,
 }
+*/
 
-extern mod linenoise {
-    fn linenoise(prompt: *libc::c_char) -> *libc::c_char;
-    fn linenoiseHistoryAdd(line: *libc::c_char) -> libc::c_int;
-    fn linenoiseHistorySetMaxLen(length: libc::c_int) -> libc::c_int;
-    fn linenoiseHistorySave(filename: *libc::c_char) -> libc::c_int;
-    fn linenoiseHistoryLoad(filename: *libc::c_char) -> libc::c_int;
+#[link(name="linenoise")]
+extern {
+    fn linenoise(prompt: *mut libc::c_char) -> *mut libc::c_char;
+    fn linenoiseHistoryAdd(line: *mut libc::c_char) -> libc::c_int;
+    //fn linenoiseHistorySetMaxLen(length: libc::c_int) -> libc::c_int;
+    fn linenoiseHistorySave(filename: *mut libc::c_char) -> libc::c_int;
+    //fn linenoiseHistoryLoad(filename: *mut libc::c_char) -> libc::c_int;
     fn linenoiseSetMultiLine(enabled: libc::c_int) -> libc::c_void;
     fn linenoiseClearScreen() -> libc::c_void;
 }
 
-pub fn init(prompt: &str) -> ~str {
-    unsafe {
-        let line = do str::as_c_str(prompt) |cstr| {
-            linenoise::linenoise(cstr)
-        };
-    str::raw::from_c_str(line)
-    }
+pub fn init(prompt: &str) -> String {
+    let line = prompt.with_c_str(|cstr| {
+        unsafe {
+            let buf = linenoise(cstr as *mut i8);
+            let line = CString::new(buf as *const i8, true);
+            String::from_str(line.as_str().unwrap())
+        }
+    });
+    line
 }
 
 pub fn history_add(line: &str) -> bool {
-    let added = do str::as_c_str(line) |cstr| {
+    let added = line.with_c_str(|cstr| {
         unsafe {
-            linenoise::linenoiseHistoryAdd(cstr)
+            linenoiseHistoryAdd(cstr as *mut i8)
         }
-    };
+    });
     added as int == 1 // number of lines added perhaps?
 }
 
 pub fn history_save(filename: &str) -> bool {
-    let saved = do str::as_c_str(filename) |cstr| {
+    let saved = filename.with_c_str(|cstr| {
         unsafe {
-            linenoise::linenoiseHistorySave(cstr)
+            linenoiseHistorySave(cstr as *mut i8)
         }
-    };
+    });
     saved as int == 0 // Seems to always be 0 if successful?
 }
 
 pub fn set_multiline(enable: bool) {
     if enable {
         unsafe {
-            linenoise::linenoiseSetMultiLine(1);
+            linenoiseSetMultiLine(1);
         }
     } else {
         unsafe {
-            linenoise::linenoiseSetMultiLine(0);
+            linenoiseSetMultiLine(0);
         }
     }
 }
 
 pub fn clear_screen() {
     unsafe {
-        linenoise::linenoiseClearScreen();
+        linenoiseClearScreen();
     }
 }

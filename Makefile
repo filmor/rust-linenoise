@@ -5,7 +5,7 @@ INSTALL_LIB = $(PREFIX)/lib
 all: linenoise.c linenoise.h
 	$(CC) -Wall -W -Os -fPIC -c linenoise.c -o linenoise.o
 	$(CC) -shared linenoise.o -o liblinenoise.so
-	rustc --lib linenoise.rs -L .
+	rustc --crate-type=lib --emit=obj linenoise.rs -C link-args="-L ."
 
 install:
 	$(INSTALL) liblinenoise*.so $(INSTALL_LIB)
