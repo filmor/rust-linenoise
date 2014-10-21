@@ -1,0 +1,10 @@
+[package]
+
+name = "linenoise"
+version = "0.1.1"
+authors = ["davbo", "donbrowne"]
+build = "make"
+
+[lib]
+name = "linenoise"
+crate-type = ["dylib"]
