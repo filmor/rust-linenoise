@@ -14,7 +14,7 @@ struct linenoiseCompletions {
 }
 */
 
-#[link(name="linenoise")]
+#[link(name="linenoise", kind="static")]
 extern {
     fn linenoise(prompt: *mut libc::c_char) -> *mut libc::c_char;
     fn linenoiseHistoryAdd(line: *mut libc::c_char) -> libc::c_int;
